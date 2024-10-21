@@ -20,7 +20,7 @@ class BearerTokenAuthenticator(APIAuthenticatorBase):
         self._auth_endpoint = auth_endpoint
         self._config_file = config_file
         self._tap = stream._tap
-        self._expires_in = self._tap.config.get("expires_in")
+        self.expires_in = self._tap.config.get("expires_in", 0)
 
     @property
     def auth_headers(self) -> dict:
@@ -36,7 +36,7 @@ class BearerTokenAuthenticator(APIAuthenticatorBase):
         result = super().auth_headers
         result[
             "Authorization"
-        ] = f"Bearer {self._tap._config.get('jwt_token')}"
+        ] = f"Bearer {self._tap._config.get('access_token')}"
         return result
 
     @property
@@ -61,15 +61,6 @@ class BearerTokenAuthenticator(APIAuthenticatorBase):
             "password": self.config.get("password"),
             "location_key": self.config.get("location_key"),
         }
-    
-    @property
-    def expires_in(self):
-        return self._tap.config.get("expires_in") or 0
-    
-    @expires_in.setter
-    def expires_in(self, value):
-        self._expires_in = value
-
 
     def is_token_valid(self) -> bool:
         now = round(datetime.utcnow().timestamp())
@@ -86,8 +77,6 @@ class BearerTokenAuthenticator(APIAuthenticatorBase):
         Raises:
             RuntimeError: When OAuth login fails.
         """
-        with open(f'{self._tap.config_file.parent}/old_config_{datetime.now().isoformat()}.json', 'w') as hist_config_file:
-            json.dump(self._tap._config, hist_config_file, indent=4)
         auth_request_payload = self.request_body
         token_response = requests.post(self.auth_endpoint, data=auth_request_payload)
         try:
@@ -95,7 +84,7 @@ class BearerTokenAuthenticator(APIAuthenticatorBase):
             token_response.raise_for_status()
             self.logger.info("OAuth authorization attempt was successful.")
             token_json = token_response.json()
-            token = token_json["token"]
+            token = token_json["data"]["token"]
         except Exception as ex:
             raise RuntimeError(
                 f"Failed login, response was '{token_response.json()}'. {ex}"

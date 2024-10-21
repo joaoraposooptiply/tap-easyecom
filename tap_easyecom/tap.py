@@ -7,26 +7,18 @@ from tap_easyecom.streams import (
     ProductsStream,
     SuppliersStream,
     SellOrdersStream,
-    SellOrderLinesStream,
     BuyOrdersStream,
-    BuyOrderLinesStream,
     ReceiptsStream,
-    ReceiptLineStream,
     ReturnsStream,
-    ReturnLinesStream,
 )
 
 STREAM_TYPES = [
     ProductsStream,
     SuppliersStream,
     SellOrdersStream,
-    SellOrderLinesStream,
     BuyOrdersStream,
-    BuyOrderLinesStream,
     ReceiptsStream,
-    ReceiptLineStream,
     ReturnsStream,
-    ReturnLinesStream,
 ]
 
 
@@ -35,10 +27,19 @@ class TapEasyEcom(Tap):
 
     name = "tap-easyecom"
 
+    def __init__(
+        self,
+        config=None,
+        catalog=None,
+        state=None,
+        parse_env_config=False,
+        validate_config=True,
+    ) -> None:
+        super().__init__(config, catalog, state, parse_env_config, validate_config)
+        self.config_file = config[0]
+
     # TODO: Update this section with the actual config values you expect:
     config_jsonschema = th.PropertiesList(
-        th.Property("auth_token", th.StringType, required=True),
-        th.Property("project_ids", th.ArrayType(th.StringType), required=True),
         th.Property("start_date", th.DateTimeType,),
     ).to_dict()
 
