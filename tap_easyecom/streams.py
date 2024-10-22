@@ -144,7 +144,7 @@ class SellOrdersStream(EasyEcomStream):
 
         th.Property("order_status", th.StringType),
         th.Property("order_status_id", th.IntegerType),
-        th.Property("suborder_count", th.StringType),
+        th.Property("suborder_count", th.CustomType({"type": ["integer", "string"]})),
         th.Property("shipping_status", th.StringType),
         th.Property("shipping_status_id", th.IntegerType),
         th.Property(
