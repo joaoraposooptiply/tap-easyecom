@@ -6,9 +6,10 @@ from tap_easyecom.client import EasyEcomStream
 
 class ProductsStream(EasyEcomStream):
     name = "products"
-    path = "/Products/GetProductMaster?custom_fields=1"
+    path = "/Products/GetProductMaster"
     primary_keys = ["product_id"]
     replication_key = "updated_at"
+    additional_params = {"custom_fields": "1"}
 
     schema = th.PropertiesList(
         th.Property("cp_id", th.IntegerType),
@@ -349,11 +350,13 @@ class ReceiptsStream(EasyEcomStream):
     name = "receipts"
     path = "/Grn/V2/getGrnDetails"
     primary_keys = ["grn_id"]
+    replication_key = "po_created_date"
+    date_filter_param = "created_after"
 
     schema = th.PropertiesList(
         th.Property("grn_id", th.IntegerType),
         th.Property("grn_invoice_number", th.StringType),
-        th.Property("total_grn_value", th.IntegerType),
+        th.Property("total_grn_value", th.NumberType),
         th.Property("grn_status_id", th.IntegerType),
         th.Property("grn_status", th.StringType),
         th.Property("grn_created_at", th.DateTimeType),
