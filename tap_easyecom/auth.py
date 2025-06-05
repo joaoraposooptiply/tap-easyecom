@@ -1,7 +1,7 @@
 """freshbooks Authentication."""
 from singer_sdk.authenticators import APIAuthenticatorBase
 from singer_sdk.streams import Stream as RESTStreamBase
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime
 import requests
 import json
@@ -21,6 +21,38 @@ class BearerTokenAuthenticator(APIAuthenticatorBase):
         self._config_file = config_file
         self._tap = stream._tap
         self.expires_in = self._tap.config.get("expires_in", 0)
+
+    def request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
+        """Make an HTTP request with automatic token refresh on 401 errors.
+        
+        Args:
+            method: HTTP method (GET, POST, etc.)
+            url: URL to request
+            **kwargs: Additional arguments to pass to requests
+            
+        Returns:
+            Response object
+            
+        Raises:
+            RuntimeError: If authentication fails after retry
+        """
+        response = requests.request(method, url, **kwargs)
+        
+        if response.status_code == 401:
+            self.logger.info("Received 401 Unauthorized, refreshing token...")
+            self.update_access_token()
+            # Update headers with new token
+            if 'headers' in kwargs:
+                kwargs['headers'].update(self.auth_headers)
+            else:
+                kwargs['headers'] = self.auth_headers
+            # Retry the request with new token
+            response = requests.request(method, url, **kwargs)
+            
+            if response.status_code == 401:
+                raise RuntimeError("Authentication failed even after token refresh")
+                
+        return response
 
     @property
     def auth_headers(self) -> dict:
